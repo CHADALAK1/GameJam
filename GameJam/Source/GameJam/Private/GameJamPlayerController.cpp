@@ -1,6 +1,7 @@
 // Copyright 1998-2015 Epic Games, Inc. All Rights Reserved.
 
 #include "GameJam.h"
+#include "GameJamCharacter.h"
 #include "GameJamPlayerController.h"
 #include "AI/Navigation/NavigationSystem.h"
 
@@ -38,12 +39,20 @@ void AGameJamPlayerController::MoveToMouseCursor()
 {
 	// Trace to see what is under the mouse cursor
 	FHitResult Hit;
-	GetHitResultUnderCursor(ECC_Visibility, false, Hit);
+	GetHitResultUnderCursor(ECC_GameTraceChannel1, false, Hit);
 
-	if (Hit.bBlockingHit)
+	ACharacter *Char = Cast<ACharacter>(Hit.GetActor());
+	if (Hit.bBlockingHit && !Char && Char != GetPawn())
 	{
 		// We hit something, move there
 		SetNewMoveDestination(Hit.ImpactPoint);
+	}
+	else if (Char && Char != GetPawn())
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, "ENEMY TOUCHED");
+		AGameJamCharacter *P = Cast<AGameJamCharacter>(GetPawn());
+		P->SetTarget(Char);
+		SetNewAttackDestination(Hit.ImpactPoint);
 	}
 }
 
@@ -54,6 +63,7 @@ void AGameJamPlayerController::MoveToTouchLocation(const ETouchIndex::Type Finge
 	// Trace to see what is under the touch location
 	FHitResult HitResult;
 	GetHitResultAtScreenPosition(ScreenSpaceLocation, CurrentClickTraceChannel, true, HitResult);
+
 	if (HitResult.bBlockingHit)
 	{
 		// We hit something, move there
@@ -73,6 +83,27 @@ void AGameJamPlayerController::SetNewMoveDestination(const FVector DestLocation)
 		if (NavSys && (Distance > 120.0f))
 		{
 			NavSys->SimpleMoveToLocation(this, DestLocation);
+		}
+	}
+}
+
+void AGameJamPlayerController::SetNewAttackDestination(const FVector DestLocation)
+{
+	APawn* const Pawn = GetPawn();
+	if (Pawn)
+	{
+		UNavigationSystem* const NavSys = GetWorld()->GetNavigationSystem();
+		float const Distance = FVector::Dist(DestLocation, Pawn->GetActorLocation());
+
+		// We need to issue move command only if far enough in order for walk animation to play correctly
+		if (NavSys && (Distance > 120.0f))
+		{
+			NavSys->SimpleMoveToLocation(this, DestLocation);
+		}
+		else
+		{
+			//TODO: Change state to Attack and loop auto attack unless interrupted from active ability
+			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, "Near Enemy");
 		}
 	}
 }

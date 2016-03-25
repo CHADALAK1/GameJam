@@ -32,4 +32,46 @@ AGameJamCharacter::AGameJamCharacter()
 	TopDownCameraComponent->AttachTo(CameraBoom, USpringArmComponent::SocketName);
 	TopDownCameraComponent->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
+	EnemyDetection = CreateDefaultSubobject<USphereComponent>(TEXT("EnemyDetection"));
+	EnemyDetection->AttachTo(RootComponent);
+	EnemyDetection->OnComponentBeginOverlap.AddDynamic(this, &AGameJamCharacter::OnCollisionEnter);
+	EnemyDetection->OnComponentEndOverlap.AddDynamic(this, &AGameJamCharacter::OnCollisionEnd);
+
+}
+
+void AGameJamCharacter::Tick(float DeltaSeconds)
+{
+
+}
+
+void AGameJamCharacter::SetTarget(ACharacter * Char)
+{
+	if (Char)
+	{
+		Target = Char;
+	}
+}
+
+void AGameJamCharacter::OnCollisionEnter(AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & Hit)
+{
+	ACharacter *Char = Cast<ACharacter>(OtherActor);
+
+	if (Char == GetTarget())
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, "CorrectTarget");
+		if (Char && Char != this)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, "ENEMY IN COLLISION");
+		}
+	}
+}
+
+void AGameJamCharacter::OnCollisionEnd(AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex)
+{
+	ACharacter *Char = Cast<ACharacter>(OtherActor);
+
+	if (Char && Char != this)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, "ENEMY EXIT COLLISION");
+	}
 }

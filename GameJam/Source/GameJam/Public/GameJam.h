@@ -3,7 +3,7 @@
 #ifndef __GAMEJAM_H__
 #define __GAMEJAM_H__
 
-#include "EngineMinimal.h"
+#include "Engine.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogGameJam, Log, All);
 
